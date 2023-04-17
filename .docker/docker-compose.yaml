@@ -1,0 +1,20 @@
+
+services:
+  server:
+    image: colllijo/cchat-server:latest
+    depends_on:
+      - database
+    expose:
+      - "42024"
+
+  database:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: cchat
+      POSTGRES_USER: god
+      POSTGRES_PASSWORD: admin
+    volumes:
+      - database-data:/var/lib/postgresql/data
+
+volumes:
+  database-data:
