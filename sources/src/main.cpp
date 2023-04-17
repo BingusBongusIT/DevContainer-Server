@@ -15,18 +15,16 @@ int main(int argumentCount, char* arguments[])
     }
     std::cout << "Server ready for connections." << std::endl;
 
-    while(true)
+	std::string input;
+    while(server.m_running)
     {
-        std::cout << "Waiting for client to connect" << std::endl;
-        if(!server.AcceptConnection())
-        {
-            std::cerr << "Error accepting incoming connection." << std::endl;
-            return 1;
-        }
-        std::cout << "Accepted new client" << std::endl;
-    }
+		getline(std::cin, input);
 
-    server.Close();
+		if(input == "stop")
+		{
+			server.Close();
+		}
+    }
 
     return 0;
 }
