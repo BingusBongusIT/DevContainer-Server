@@ -6,23 +6,24 @@
 #define CC_SERVER_CLIENT_HPP
 
 #include <thread>
+#include <uuid/uuid.h>
 
 #include "Socket.hpp"
 
 class Client {
 public:
+	uuid_t m_id{};
+	std::thread m_thread;
+
     bool m_running;
 
-    Client(Socket* serverSocket, int bufferSize = 4096);
+    explicit Client(Socket* serverSocket, int bufferSize = 4096);
     ~Client();
+
+    int SendMessage(void* buffer, int bufferSize);
+    int ReceiveMessage(void* buffer, int bufferSize);
 private:
     Socket* m_socket;
-
-    int m_bufferSize;
-    char* m_buffer;
-
-    std::thread m_thread;
-    void HandleClient();
 };
 
 

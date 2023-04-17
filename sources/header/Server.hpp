@@ -15,20 +15,25 @@
 
 class Server {
 public:
+	bool m_running;
 
     bool Init(const char* bindingIp, int port, int bufferSize = 4096);
-    bool AcceptConnection();
+    void AcceptConnections();
     void Close();
 
 private:
     const char* m_bindingIp;
     int m_port;
 
+	std::thread m_manager;
     Socket* m_listeningSocket;
     std::vector<Client*> m_clients;
 
     int m_bufferSize;
     char* m_buffer;
+
+	void ManageServer();
+	void HandleClient(Client* client);
 };
 
 
