@@ -121,25 +121,21 @@ void Server::HandleClient(Client *client)
 			{
 				for(auto _client: m_clients)
 				{
-					char id[36];
 					if(_client == client->GetChatPartner())
 					{
-
 						client->m_chatConnected = true;
 						_client->m_chatConnected = true;
 						_client->SetChatPartner(client);
 
 						std::string chatMessage;
 
-						uuid_unparse(client->GetChatPartner()->m_id, id);
 						chatMessage = " --- started a chat with ";
-						chatMessage += id;
+						chatMessage += _client->m_username;
 						chatMessage += " --- ";
 						client->SendMessage((void *) chatMessage.c_str(), chatMessage.size() + 1);
 
-						uuid_unparse(_client->GetChatPartner()->m_id, id);
 						chatMessage = " --- started a chat with ";
-						chatMessage += id;
+						chatMessage += client->m_username;
 						chatMessage += " --- ";
 						_client->SendMessage((void *) chatMessage.c_str(), chatMessage.size() + 1);
 					}
@@ -213,35 +209,30 @@ void Server::HandleClient(Client *client)
 
 void Server::Login(Client* client, std::string* arguments)
 {
-    std::cout << "login?" << std::endl;
-
     std::string::size_type separator = arguments->find(':', 0);
     std::string username = arguments->substr(0, separator);
     std::string password = arguments->substr(separator + 1);
 
     pqxx::work txn{*m_connection};
     pqxx::result foundRow = txn.exec(
-            "SELECT name "
+            "SELECT name, password "
             "FROM Users "
             "WHERE name =" + txn.quote(username));
 
-    std::cout << "Querried db" << std::endl;
     if (!foundRow.empty())
     {
-
-        std::string passwordInDb = foundRow[0][2].as<std::string>();
+        std::string passwordInDb;
+		passwordInDb += foundRow[0][1].c_str();
         if (passwordInDb == arguments->substr(separator+1))
         {
-            std::cout << "logging in" << std::endl;
             std::string message = "Logged in with user: " + username;
             client->SendMessage((void *) message.c_str(), message.size() + 1);
+			client->m_username = username;
         }
         else
         {
-            std::cout << "wrong password" << std::endl;
             std::string warning = "Wrong password.";
             client->SendMessage((void *) warning.c_str(), warning.size() + 1);
-
         }
     }
     else
@@ -252,17 +243,13 @@ void Server::Login(Client* client, std::string* arguments)
         client->SendMessage((void *) warning.c_str(), warning.size() + 1);
     }
     txn.commit();
-
-    // TODO: DB STUFF
-	// Check if username exists
-	// If yes check if password match
-	// If no send error messages
-	// Set the username
 }
 
 void Server::Logout(Client *client)
 {
-	// logout the client
+	std::string message = "Logged out";
+	client->SendMessage((void *) message.c_str(), message.size() + 1);
+	client->m_username.clear();
 }
 
 void Server::Register(Client *client, std::string* arguments)
@@ -294,11 +281,6 @@ void Server::Register(Client *client, std::string* arguments)
         client->SendMessage((void *) warning.c_str(), warning.size() + 1);
     }
     txn.commit();
-	// TODO: DB STUFF
-	// Check if username doesn't exist
-	// If yes create database entry
-	// If no send error messages
-	// Set the username
 }
 
 void Server::StartChat(Client *client, std::string* arguments)
@@ -308,8 +290,6 @@ void Server::StartChat(Client *client, std::string* arguments)
 	//temp
 	uuid_t partnerId;
 	uuid_parse(partner.c_str(), partnerId);
-	char userid[36];
-	uuid_unparse(client->m_id, userid);
 
 	for(auto _client : m_clients)
 	{
@@ -318,8 +298,7 @@ void Server::StartChat(Client *client, std::string* arguments)
 			continue;
 		}
 
-//		if(_client->username == partner)
-		if(uuid_compare(_client->m_id, partnerId) == 0)
+		if(_client->m_username == partner)
 		{
 			// Remove previous partner
 			if(client->m_chatConnected)
@@ -330,7 +309,7 @@ void Server::StartChat(Client *client, std::string* arguments)
 				client->SetChatPartner(nullptr);
 			}
 
-			std::string message = userid;
+			std::string message = client->m_username;
 			message += " would like to start a chat with you: use !accpet to start the chat";
 
 			_client->SendMessage((void *) message.c_str(), message.size() + 1);
