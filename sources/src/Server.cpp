@@ -17,6 +17,18 @@ bool Server::Init(const char* bindingIp, int port, int bufferSize)
         return false;
     }
 
+    m_connection = new pqxx::connection{"postgresql://god:admin@database/cchat"};
+    pqxx::work txn{*m_connection};
+    txn.exec0(
+            "CREATE TABLE IF NOT EXISTS Users ("
+            "id SERIAL PRIMARY KEY, "
+            "name varchar(45) NOT NULL, "
+            "password varchar(255) NOT NULL"
+            ");"
+            );
+    txn.commit();
+
+
     m_bufferSize = bufferSize;
     m_buffer = new char[m_bufferSize];
 
@@ -201,8 +213,47 @@ void Server::HandleClient(Client *client)
 
 void Server::Login(Client* client, std::string* arguments)
 {
+    std::cout << "login?" << std::endl;
 
-	// TODO: DB STUFF
+    std::string::size_type separator = arguments->find(':', 0);
+    std::string username = arguments->substr(0, separator);
+    std::string password = arguments->substr(separator + 1);
+
+    pqxx::work txn{*m_connection};
+    pqxx::result foundRow = txn.exec(
+            "SELECT name "
+            "FROM Users "
+            "WHERE name =" + txn.quote(username));
+
+    std::cout << "Querried db" << std::endl;
+    if (!foundRow.empty())
+    {
+
+        std::string passwordInDb = foundRow[0][2].as<std::string>();
+        if (passwordInDb == arguments->substr(separator+1))
+        {
+            std::cout << "logging in" << std::endl;
+            std::string message = "Logged in with user: " + username;
+            client->SendMessage((void *) message.c_str(), message.size() + 1);
+        }
+        else
+        {
+            std::cout << "wrong password" << std::endl;
+            std::string warning = "Wrong password.";
+            client->SendMessage((void *) warning.c_str(), warning.size() + 1);
+
+        }
+    }
+    else
+    {
+        std::cout << "username not found" << std::endl;
+        // Send warning
+        std::string warning = "Username does not exist in database.";
+        client->SendMessage((void *) warning.c_str(), warning.size() + 1);
+    }
+    txn.commit();
+
+    // TODO: DB STUFF
 	// Check if username exists
 	// If yes check if password match
 	// If no send error messages
@@ -217,6 +268,32 @@ void Server::Logout(Client *client)
 void Server::Register(Client *client, std::string* arguments)
 {
 
+    std::string::size_type separator = arguments->find(':', 0);
+    std::string username = arguments->substr(0, separator);
+    std::string password = arguments->substr(separator + 1);
+
+
+    pqxx::work txn{*m_connection};
+    pqxx::result foundRow = txn.exec(
+            "SELECT name "
+            "FROM Users "
+            "WHERE name =" + txn.quote(username));
+    if (foundRow.empty())
+    {
+        txn.exec0(
+            "INSERT INTO Users (name, password) "
+            "VALUES (" + txn.quote(username) + ", " + txn.quote(password) +") "
+            );
+        std::string message = "Created new user.";
+        client->SendMessage((void *) message.c_str(), message.size() + 1);
+    }
+    else
+    {
+        // Send warning
+        std::string warning = "Username already exists in database.";
+        client->SendMessage((void *) warning.c_str(), warning.size() + 1);
+    }
+    txn.commit();
 	// TODO: DB STUFF
 	// Check if username doesn't exist
 	// If yes create database entry
