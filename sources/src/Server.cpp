@@ -230,6 +230,15 @@ void Server::StartChat(Client *client, std::string* arguments)
 //		if(_client->username == partner)
 		if(uuid_compare(_client->m_id, partnerId) == 0)
 		{
+			// Remove previous partner
+			if(client->m_chatConnected)
+			{
+				client->GetChatPartner()->m_chatConnected = false;
+				client->GetChatPartner()->SetChatPartner(nullptr);
+				client->m_chatConnected = false;
+				client->SetChatPartner(nullptr);
+			}
+
 			std::string message = userid;
 			message += " would like to start a chat with you: use !accpet to start the chat";
 
