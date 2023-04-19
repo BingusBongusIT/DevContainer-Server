@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <pqxx/pqxx>
 
 #include "Socket.hpp"
 #include "Client.hpp"
@@ -32,6 +33,7 @@ private:
     int m_bufferSize;
     char* m_buffer;
 
+	pqxx::connection* m_connection;
 
 	const std::vector<std::string> m_commands = {
 			"login",		// 0

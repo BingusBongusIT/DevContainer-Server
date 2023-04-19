@@ -20,6 +20,20 @@ bool Server::Init(const char* bindingIp, int port, int bufferSize)
     m_bufferSize = bufferSize;
     m_buffer = new char[m_bufferSize];
 
+	m_connection = new pqxx::connection{"postgresql://god:admin@database/cchat"};
+	if(m_connection->is_open())
+	{
+		pqxx::work transaction(*m_connection);
+		transaction.exec(
+			"CREATE TABLE IF NOT EXISTS \"user\" ("
+			"id SERIAL PRIMARY KEY,"
+			"username VARCHAR(50) NOT NULL,"
+			"password VARCHAR(64) NOT NULL"
+			");"
+		);
+		transaction.commit();
+	}
+
 	m_manager = std::thread(&Server::ManageServer, this);
     return true;
 }

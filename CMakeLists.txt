@@ -7,7 +7,7 @@ file(GLOB HEADER_FILES "sources/header/*.hpp")
 file(GLOB SOURCE_FILES "sources/src/*.cpp")
 
 set(CMAKE_GENERATOR_PLATFORM x64)
-set(LIBRARIES ${LIBRARIES} uuid)
+set(LIBRARIES ${LIBRARIES} uuid pqxx)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
