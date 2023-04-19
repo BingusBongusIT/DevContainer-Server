@@ -8,7 +8,6 @@ services:
       - "42024"
     ports:
       - "42024:42024"
-
   database:
     image: postgres:15
     environment:

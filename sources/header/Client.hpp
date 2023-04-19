@@ -13,7 +13,7 @@
 class Client {
 public:
 	uuid_t m_id{};
-	std::string username;
+	std::string m_username;
 	std::thread m_thread;
 
     bool m_running;
