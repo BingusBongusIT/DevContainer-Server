@@ -32,8 +32,21 @@ private:
     int m_bufferSize;
     char* m_buffer;
 
+
+	const std::vector<std::string> m_commands = {
+			"login",		// 0
+			"logout",		// 1
+			"register",		// 2
+			"msg"			// 3
+	};
+
 	void ManageServer();
 	void HandleClient(Client* client);
+
+	void Login(Client* client, std::string* arguments);
+	void Logout(Client* client);
+	void Register(Client* client, std::string* arguments);
+	void StartChat(Client* client, std::string* arguments);
 };
 
 

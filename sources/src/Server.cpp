@@ -84,10 +84,169 @@ void Server::HandleClient(Client *client)
 			break;
 		}
 
-		std::cout << "Received: " << std::string(m_buffer, 0, bytesReceived) << std::endl;
+		std::string input = std::string(m_buffer, 0, bytesReceived);
+		std::string type;
 
-		// Default response: broadcast
-		client->SendMessage(m_buffer, bytesReceived + 1);
+		std::cout << "Received: " << input.c_str() << std::endl;
+
+		if (client->m_chatAccepted)
+		{
+			if(input == "msg: !accept")
+			{
+				for(auto _client: m_clients)
+				{
+					char id[36];
+					if(_client == client->GetChatPartner())
+					{
+
+						client->m_chatConnected = true;
+						_client->m_chatConnected = true;
+						_client->SetChatPartner(client);
+
+						std::string chatMessage;
+
+						uuid_unparse(client->GetChatPartner()->m_id, id);
+						chatMessage = " --- started a chat with ";
+						chatMessage += id;
+						chatMessage += " --- ";
+						client->SendMessage((void *) chatMessage.c_str(), chatMessage.size() + 1);
+
+						uuid_unparse(_client->GetChatPartner()->m_id, id);
+						chatMessage = " --- started a chat with ";
+						chatMessage += id;
+						chatMessage += " --- ";
+						_client->SendMessage((void *) chatMessage.c_str(), chatMessage.size() + 1);
+					}
+				}
+			}
+			else
+			{
+				client->SetChatPartner(nullptr);
+			}
+			client->m_chatAccepted = false;
+			continue;
+		}
+
+		std::string::size_type separator = input.find(':', 0);
+		if(separator != std::string::npos)
+		{
+			type =  input.substr(0, separator);
+
+			if(type == "command")
+			{
+				// switch for the four commands
+				std::string command = input.substr(separator + 2);
+				std::string arguments;
+
+				//Check if command has arguments
+				std::string::size_type endOfCommand = command.find('|', 0);
+				if (endOfCommand != std::string::npos)
+				{
+					arguments = command.substr(endOfCommand + 1);
+					command = command.substr(0, endOfCommand);
+				}
+
+				// Check if command exists
+				auto commandIterator = std::find(m_commands.begin(), m_commands.end(), command);
+				if (commandIterator != m_commands.end())
+				{
+					// Turn the command into it's index for use in the switch
+					int commandIndex = commandIterator - m_commands.begin();
+					switch (commandIndex) {
+						case 0: // /login
+							Login(client, &arguments);
+							break;
+						case 1: // /logout
+							Logout(client);
+							break;
+						case 2: // /register
+							Register(client, &arguments);
+							break;
+						case 3: // /msg
+							StartChat(client, &arguments);
+							break;
+					}
+				}
+			}
+			else
+			{
+				if (client->m_chatConnected)
+				{
+					client->SendChatMessage((void *) input.substr(separator + 1).c_str(), input.substr(separator + 1).size() + 1);
+				}
+				else
+				{
+					// Send warning
+					std::string warning = "You are currently in no chat. Please join one before sending messages";
+					client->SendMessage((void *) warning.c_str(), warning.size() + 1);
+				}
+			}
+		}
+	}
+}
+
+void Server::Login(Client* client, std::string* arguments)
+{
+
+	// TODO: DB STUFF
+	// Check if username exists
+	// If yes check if password match
+	// If no send error messages
+	// Set the username
+}
+
+void Server::Logout(Client *client)
+{
+	// logout the client
+}
+
+void Server::Register(Client *client, std::string* arguments)
+{
+
+	// TODO: DB STUFF
+	// Check if username doesn't exist
+	// If yes create database entry
+	// If no send error messages
+	// Set the username
+}
+
+void Server::StartChat(Client *client, std::string* arguments)
+{
+	std::string partner = *arguments;
+
+	//temp
+	uuid_t partnerId;
+	uuid_parse(partner.c_str(), partnerId);
+	char userid[36];
+	uuid_unparse(client->m_id, userid);
+
+	for(auto _client : m_clients)
+	{
+		if(uuid_compare(client->m_id, _client->m_id) == 0)
+		{
+			continue;
+		}
+
+//		if(_client->username == partner)
+		if(uuid_compare(_client->m_id, partnerId) == 0)
+		{
+			// Remove previous partner
+			if(client->m_chatConnected)
+			{
+				client->GetChatPartner()->m_chatConnected = false;
+				client->GetChatPartner()->SetChatPartner(nullptr);
+				client->m_chatConnected = false;
+				client->SetChatPartner(nullptr);
+			}
+
+			std::string message = userid;
+			message += " would like to start a chat with you: use !accpet to start the chat";
+
+			_client->SendMessage((void *) message.c_str(), message.size() + 1);
+
+			_client->m_chatAccepted = true;
+			_client->SetChatPartner(client);
+		}
 	}
 }
 
