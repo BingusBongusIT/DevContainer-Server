@@ -24,7 +24,7 @@ docker compose down
 
 Alternativ kann auch das docker-compose seperat heruntergeladen und gestartet werden:
 
-````bash
+```bash
 wget https://raw.githubusercontent.com/BingusBongusIT/DevContainer-Server/main/.docker/docker-compose.yaml
 docker compose up -d
 ```
