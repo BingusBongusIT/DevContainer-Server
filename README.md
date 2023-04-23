@@ -4,6 +4,23 @@ C++ Server für eine kleine Chat-Applikation, welche für das Modul 347 über Do
 
 ## Starten
 
+Wenn Docker lokal läuft, kann vom Projektverzeichnis in den Ordner .docker gewechselt werden:
+
+```bash
+cd .docker
+```
+
+Anschliessend kann das docker-compose gestartet werden:
+
+```bash
+docker compose up -d
+```
+
+Um den Server wieder zu stoppen kann das docker-compose heruntergefahren werden:
+
+```bash
+docker compose down
+```
 
 ## Entwickeln
 
